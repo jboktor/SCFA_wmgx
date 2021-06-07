@@ -1,16 +1,5 @@
 ## Configure enviornment
 
-#### Install Bioconductor Packages
-install.packages("BiocManager")
-BiocManager::install(c(
-  "phyloseq",
-  "microbiome",
-  "Biobase",
-  "Maaslin2",
-  "DirichletMultinomial",
-  "MMUPHin"
-  ))
-
 #### Install CRAN Packages
 install.packages(
   c(
@@ -68,27 +57,26 @@ install.packages(
     "mlbench",
     "caret",
     "MLeval",
-    "rsconnnect",
     "lazyeval",
     "ppcor",
     "ggdendro",
-    "tidymodels",
-    "vip",
-    "Rcpp",
-    "mRMRe"
+    "tidymodels"
   )
 )
-
+# 
+#### Install Bioconductor Packages
+install.packages("BiocManager")
+BiocManager::install(c(
+  "phyloseq",
+  "microbiome",
+  "Biobase",
+  "Maaslin2"
+))
 
 #### Install Other Github available Packages
 install.packages("remotes")
 remotes::install_github("gmteunisse/Fantaxtic")
 remotes::install_github("schuyler-smith/phyloschuyler")
-
-# Development Version Packages
-BiocManager::install(version = "devel")
-BiocManager::install("curatedMetagenomicData")
-BiocManager::valid()
 
 
 

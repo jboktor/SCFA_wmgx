@@ -1,49 +1,39 @@
 ### Miscellaneous Functions
 
 
-#-----------------------------------------------------------------------------------------------------------
+#_______________________________________________________________________________
 # Aesthetic variables
 
-## Color Schemes
-cols.pdpc <- c("PD"= "#bfbfbf", "PC" = "#ed7d31")
-cols.pdhc <- c("PD"= "#bfbfbf", "HC" = "#5b9bd5")
-cols.pdpchc <- c("PD"= "#bfbfbf", "PC" = "#ed7d31", "HC" = "#5b9bd5")
-cols.pdpchc.dark <- c("PD"= "#494949", "PC" = "#ed7d31", "HC" = "#5b9bd5")
+# Color Schemes
+genotype.cols <- c("ASO"= "#bfbfbf", "WT" = "#ed7d31")
+treatment.cols <- c("PD"= "#Prebiotic", "HC" = "#Control")
+treatment.group.cols <-
+  c("ASO_Prebiotic" = "#91a6cc",
+    "ASO_Control" = "#f1f1f1",
+    "WT_Prebiotic" = "#1D2C4E",
+    "WT_Control" = "#434343")
 
 # Rims
-cols.pdpc.rim <- c("PD"= "#494949", "PC" = "#c15811")
-cols.pdhc.rim <- c("PD"= "#494949", "HC" = "#2e75b5")
-cols.pdpchc.rim <- c("PD"= "#494949", "PC" = "#c15811", "HC" = "#2e75b5")
+treatment.group.cols.rims <-
+  c("ASO_Prebiotic" = "#4f70ab",
+    "ASO_Control" = "#404040",
+    "WT_Prebiotic" = "#1d2c4e",
+    "WT_Control" = "#080808")
 
-load_alphadiv_colors <- function(){ 
-  cols.pdpchc <- c("PD"= "#494949", 
-                   "PC" = "#ed7d31",
-                   "HC" = "#5b9bd5")
-  cols.pdpchc.rim <- c("PD"= "#494949", 
-                       "PC" = "#c15811",
-                       "HC" = "#2e75b5")
-  assign("cols.pdpchc", cols.pdpchc, envir = .GlobalEnv)
-  assign("cols.pdpchc.rim", cols.pdpchc.rim, envir = .GlobalEnv)
-  
-  }
-  
-load_betadiv_colors <- function(){
-  cols.pdpchc <- c("PD Patient"= "#bfbfbf", 
-                   "Population Control" = "#ed7d31",
-                   "Household Control" = "#5b9bd5")
-  cols.pdpchc.dark <- c("PD Patient"= "#494949", 
-                        "Population Control" = "#ed7d31",
-                        "Household Control" = "#5b9bd5")
-  cols.pdpchc.rim <- c("PD Patient"= "#494949", 
-                       "Population Control" = "#c15811",
-                       "Household Control" = "#2e75b5") 
-  
-  assign("cols.pdpchc", cols.pdpchc, envir = .GlobalEnv)
-  assign("cols.pdpchc.dark", cols.pdpchc.dark, envir = .GlobalEnv)
-  assign("cols.pdpchc.rim", cols.pdpchc.rim, envir = .GlobalEnv)
+treatment_group_labels <- c(
+  "ASO_Control" = "ASO\nControl",
+  "ASO_Prebiotic" = "ASO\nPrebiotic",
+  "WT_Control" = "WT\nControl",
+  "WT_Prebiotic" = "WT\nPrebiotic"
+)
+
+
+#_______________________________________________________________________________
+
+print_line <- function(){
+  cat("---------------------------------------------------------------------\n")
 }
-
-#-----------------------------------------------------------------------------------------------------------
+#_______________________________________________________________________________
  # Remove Objects from environment
 
 remove_dats <- function() {
@@ -63,108 +53,27 @@ remove_dats <- function() {
   }
 
 
-#--------------------------------------------------------------------------------------------------
+#_______________________________________________________________________________
 # Load number of clean sample reads
-#--------------------------------------------------------------------------------------------------
+#_______________________________________________________________________________
 
-# load_reads <- function(){
-#   func_reads <- read_tsv("files/humann2_read_and_species_count_table.tsv", col_names = T)
-#   reads <- dplyr::select(func_reads, c("# samples","total reads")) %>% 
-#     dplyr::rename( "id" = "# samples", "clean_total_reads" = "total reads")
-#   return(reads)
-# }
-
-load_reads <- function(cohort){
+load_reads <- function() {
+  func_reads <-
+    read_tsv(
+      "files/SCFA_biobakery_output_slim/humann/counts/humann_read_and_species_count_table.tsv",
+      col_names = T
+    )
+  reads <-
+    func_reads %>%
+    # dplyr::filter(`# samples` %ni%  negative_controls) %>%
+    dplyr::mutate(`# samples` = substr(`# samples`, 1, 5)) %>%
+    dplyr::mutate(`# samples` = str_remove(`# samples`, "_$")) %>%
+    dplyr::rename(donor_id = `# samples`, clean_total_reads = "total reads")
   
-  negative_controls <- c("S00A4-ATCC_MSA_1003_S96", 
-                         "S00A4-neg2_S119", 
-                         "S00A4-neg3_S125",
-                         "S00A4-neg_S118", 
-                         "S00A4NegExt_P00A4_S94", 
-                         "S00A4NegH2O_P00A4_S95",
-                         "S00A4_stagPos_S117", 
-                         "BLANK")
-  
-  TBC_keys <- read.csv(file = "files/metadata_keys.csv", header= TRUE) %>% 
-    dplyr::select(c(MBI_Sample_ID, id)) %>% 
-    mutate(id = gsub("_", ".", id)) %>% 
-    mutate(MBI_Sample_ID = as.character(MBI_Sample_ID)) %>% 
-    mutate(id = as.character(id)) %>% 
-    dplyr::rename(`# samples` = MBI_Sample_ID)
-  
-  RUSH_keys <- read.csv(file = "files/metadata_phyloseq_RUSH.csv", header= TRUE) %>% 
-    dplyr::filter(study_group == "PD") %>% 
-    dplyr::select(donor_id, host_subject_id) %>% 
-    dplyr::mutate(donor_id = as.character(donor_id)) %>% 
-    dplyr::mutate(host_subject_id = as.character(host_subject_id)) %>% 
-    dplyr::rename(`# samples` = host_subject_id)
-  
-  if (cohort == "TBC"){
-    func_reads_TBC <-
-      read_tsv(
-        "files/TBC_biobakery_output_slim/humann/counts/humann_read_and_species_count_table.tsv",
-        col_names = T)
-    reads <- 
-      func_reads_TBC %>% 
-      dplyr::filter(`# samples` %ni%  negative_controls) %>% 
-      dplyr::mutate(`# samples` = substr(`# samples`, 1, 10)) %>% 
-      left_join(TBC_keys, by = "# samples") %>% 
-      dplyr::select(c("id","total reads")) %>% 
-      dplyr::rename("donor_id" = "id", "clean_total_reads" = "total reads") %>% 
-      return(reads)
-    
-  } else if (cohort == "RUSH") {
-    
-    func_reads_RUSH <-
-      read_tsv(
-        "files/RUSH_biobakery_output_slim/humann/counts/humann_read_and_species_count_table.tsv",
-        col_names = T)
-    reads <- 
-      func_reads_RUSH %>% 
-      dplyr::filter(str_detect(`# samples`, "BLANK", negate = TRUE)) %>% 
-      dplyr::filter(str_detect(`# samples`, "MSA", negate = TRUE)) %>% 
-      dplyr::mutate(`# samples` = substr(`# samples`, 1, 6)) %>% 
-      left_join(RUSH_keys, by = "# samples") %>% 
-      dplyr::select(c("donor_id", "total reads")) %>%
-      dplyr::rename("clean_total_reads" = "total reads")
-    return(reads)
-    
-  } else if (cohort == "Merged") {
-    
-    func_reads_TBC <-
-      read_tsv(
-        "files/TBC_biobakery_output_slim/humann/counts/humann_read_and_species_count_table.tsv",
-        col_names = T
-      )
-    reads_TBC <-
-      func_reads_TBC %>%
-      dplyr::filter(`# samples` %ni%  negative_controls) %>%
-      dplyr::mutate(`# samples` = substr(`# samples`, 1, 10)) %>%
-      left_join(TBC_keys, by = "# samples") %>%
-      dplyr::select(c("id", "total reads")) %>%
-      dplyr::rename("donor_id" = "id", "clean_total_reads" = "total reads") %>% 
-      dplyr::mutate(cohort = "TBC")
-    func_reads_RUSH <-
-      read_tsv(
-        "files/RUSH_biobakery_output_slim/humann/counts/humann_read_and_species_count_table.tsv",
-        col_names = T
-      )
-    reads_RUSH <-
-      func_reads_RUSH %>%
-      dplyr::filter(str_detect(`# samples`, "BLANK", negate = TRUE)) %>%
-      dplyr::filter(str_detect(`# samples`, "MSA", negate = TRUE)) %>%
-      dplyr::mutate(`# samples` = substr(`# samples`, 1, 6)) %>%
-      left_join(RUSH_keys, by = "# samples") %>%
-      dplyr::select(c("donor_id", "total reads")) %>%
-      dplyr::rename("clean_total_reads" = "total reads") %>% 
-      dplyr::mutate(cohort = "RUSH")
-    reads <- rbind(reads_TBC, reads_RUSH)
-    
-    return(reads)
-    
-  }
+  return(reads)
 }
-#-----------------------------------------------------------------------------------------------------------
+
+#_______________________________________________________________________________
 ######## p-value significance (integer to symbol function)
 
 sig_mapper <- function(pval, shh = F, porq = "p", symbols = T) {
@@ -191,7 +100,7 @@ sig_mapper <- function(pval, shh = F, porq = "p", symbols = T) {
   return(sigvalue)
 }
 
-#-----------------------------------------------------------------------------------------------------------
+#_______________________________________________________________________________
 
 sig.symbol.generator <- function(Column, porq = "p", shh = F){
   sig.symbol <- c()
@@ -201,7 +110,7 @@ sig.symbol.generator <- function(Column, porq = "p", shh = F){
   return(sig.symbol)
 }
 
-#-----------------------------------------------------------------------------------------------------------
+#_______________________________________________________________________________
 
 distribution_sanity <- function(df) {
   
@@ -260,43 +169,7 @@ distribution_sanity2 <- function(df, binN = 30) {
   cowplot::plot_grid(histo_plot, ecdf_plot, ncol = 1, align="v")
 }
 
-
-#-----------------------------------------------------------------------------------------------------------
-################################  Functions to adjust feature names  ########################################
-#-----------------------------------------------------------------------------------------------------------
-
-
-prep_species_names <- function(phylo_obj){
-  taxa_names(phylo_obj) <- gsub("s__", "", taxa_names(phylo_obj))
-  return(features)
-}
-
-prep_pathway_names <- function(phylo_obj){
-  features <- paste0("PATHWAY_", taxa_names(phylo_obj))
-  features <- gsub(":", ".", features)
-  features <- gsub("\\|", ".", features)
-  features <- gsub(" ", "_", features)
-  features <- gsub("-", "_", features)
-  return(features)
-}
-prep_enzyme_names <- function(phylo_obj){
-  features <- paste0("ENZYME_", taxa_names(phylo_obj))
-  features <- gsub(":", ".", features)
-  features <- gsub("\\|", ".", features)
-  features <- gsub(" ", "_", features)
-  features <- gsub("-", "_", features)
-  return(features)
-}
-prep_ko_names <- function(phylo_obj){
-  features <- taxa_names(phylo_obj)
-  features <- gsub(":", ".", features)
-  features <- gsub("\\|", ".", features)
-  features <- gsub(" ", "_", features)
-  features <- gsub("-", "_", features)
-  return(features)
-}
-
-#-----------------------------------------------------------------------------------------------------------
+#_______________________________________________________________________________
 
 group_col_from_ids <- function(df.in, ids){
   df.out <- dplyr::mutate(df.in, group = if_else(grepl("HC", ids), "HC",
@@ -316,7 +189,7 @@ group_col_from_ids2 <- function(df.in){
 }
 
 
-#-----------------------------------------------------------------------------------------------------------
+#_______________________________________________________________________________
 
 boxplot_all <- function(df, x, y, cols = group.cols, title = blank.title, ylabel = blank.ylabel){
   
@@ -364,7 +237,7 @@ boxplot_all_facet <- function(df, x, y, cols = group.cols, title = blank.title, 
   
 }
 
-#-----------------------------------------------------------------------------------------------------------
+#_______________________________________________________________________________
 
 boxplot_all_generic <- function(df, x, y, cols = group.cols, title = blank.title, ylabel = blank.ylabel){
   
@@ -388,39 +261,35 @@ boxplot_all_generic <- function(df, x, y, cols = group.cols, title = blank.title
   
 }
 
-#-----------------------------------------------------------------------------------------------------------
+#_______________________________________________________________________________
 
-alpha_div_boxplots <- function(df, x, y, 
-                               df.pairs, df.pairs.x, df.pairs.y, pairs.column, 
-                               cols, cols.rim, ylabel,PDvPC.stat, PDvHC.stat){
+alpha_div_boxplots <- function(df, x, y, cols, cols.rim, ylabel,tukeystats){
   
-  ###' Function for alpha diveristy
-  ###' boxplots with paired lines
+  ###' Function for plotting alpha diversity data
   
   set.seed(123)
+  comps <- get_comparisons(df, treatment_group, ref.group = NULL)
+  comps$V1
   p <- ggplot(data = df, aes(x = x, y = y)) + 
     theme_minimal() + 
-    geom_point(aes(fill = x, color = x), position = position_jitterdodge(dodge.width=1),shape=21, size=1, alpha = 1) +
-    geom_boxplot(aes(fill = x, color = x), width=0.3, alpha = 0.1, outlier.alpha = 0) +
-    geom_line(data = df.pairs, aes(x = df.pairs.x, y = df.pairs.y, group = pairs.column), 
-              linetype = 'solid', color = "grey", alpha = 0.7) +
-    theme(axis.title.x=element_blank(),
-          legend.position = "none") +
-    ylab(ylabel) +
-    theme(panel.grid.major.x = element_blank(),
-          panel.grid.minor.y = element_blank()) +
-    labs(fill="Group") +
+    geom_point(aes(fill = x, color = x), position = position_jitterdodge(dodge.width=1), 
+               shape=21, size=1, alpha = 1) +
+    geom_boxplot(aes(fill = x, color = x), width=0.5, alpha = 0.1, outlier.alpha = 0) +
+    labs(y=ylabel, fill="Group") +
     scale_fill_manual(values = cols) +
     scale_colour_manual(values = cols.rim) +
-    geom_signif(comparisons = list(c("PD", "HC")), annotations = sig_mapper(PDvHC.stat)) +
-    geom_signif(comparisons = list(c("PC", "PD")), annotations = sig_mapper(PDvPC.stat))
+    scale_x_discrete(labels = treatment_group_labels) +
+    theme(axis.title.x=element_blank(),
+          legend.position = "none",
+          panel.grid.major.x = element_blank(),
+          panel.grid.minor.y = element_blank(),
+          axis.text.x = element_text(angle=45, hjust=1))
   return(p)
 }
 
-
-#-----------------------------------------------------------------------------------------------------------
+#_______________________________________________________________________________
 #                           Functions to explore select features in dataset
-#-----------------------------------------------------------------------------------------------------------
+#_______________________________________________________________________________
 
 explore_table <- function(obj){
   data.table <- obj %>%
@@ -451,113 +320,7 @@ plot_feature <- function(obj, feature){
               ylabel= paste(unique(dm$rowname), "Abundance"))
 }
 
-#-----------------------------------------------------------------------------------------------------------
-#                                            ML FUNCTIONS
-#-----------------------------------------------------------------------------------------------------------
-# from: http://jaehyeon-kim.github.io/2015/05/Setup-Random-Seeds-on-Caret-Package.html
-
-setSeeds <- function(method = "repeatedcv", numbers = 1, repeats = 1, tunes = NULL, seed = 42) {
-  
-  #' function to set up random seeds for repeated ML cross validation models
-  
-  #B is the number of resamples and integer vector of M (numbers + tune length if any)
-  
-  B <- if (method == "cv") numbers
-  else if(method == "repeatedcv") numbers * repeats
-  else NULL
-  
-  if(is.null(length)) {
-    seeds <- NULL
-  } else {
-    set.seed(seed = seed)
-    seeds <- vector(mode = "list", length = B)
-    seeds <- lapply(seeds, function(x) sample.int(n = 1000000, size = numbers + ifelse(is.null(tunes), 0, tunes)))
-    seeds[[length(seeds) + 1]] <- sample.int(n = 1000000, size = 1)
-  }
-  # return seeds
-  seeds
-}
-
-#-----------------------------------------------------------------------------------------------------------
-
-unregister <- function() {
-  #' Unregister a foreach backend 
-  #' Use when looping functions that run 
-  #' analyses in parallel
-  
-  enviorn <- foreach:::.foreachGlobals
-  rm(list=ls(name=enviorn), pos=enviorn)
-}
-
-
-#-----------------------------------------------------------------------------------------------------------
-
-group_col_from_ids_ML <- function(df.in, ids){
-  df.out <- mutate(df.in, group = if_else(grepl("control", ids), "control", "disease"))
-  rownames(df.out) <- rownames(df.in)
-  return(df.out)
-}
-
-#-----------------------------------------------------------------------------------------------------------
-
-
-prep.CMD.Species.ML <- function(study, metafilter = NA){
-  
-  #' Funtion that preps input for ML analysis 
-  #' Input: Study name from curatedMetagenomicData
-  #' Output: dataframe of Species abundnace inluding an 
-  #' identifying group column
-  
-  # alt.disease <- curatedMetagenomicData(paste0(study, ".metaphlan_bugs_list.stool"), dryrun=F)
-  # 
-  # df.spec <- alt.disease[[1]] %>%
-  #   ExpressionSet2phyloseq() %>% 
-  #   subset_taxa(!is.na(Species)) %>% 
-  #   subset_taxa(is.na(Strain)) 
-  
-  # study <- study
-
-  df.abund <- study %>% 
-    # microbiome::transform("compositional") %>%
-    microbiome::abundances() %>% 
-    t() %>% 
-    as.data.frame() %>% 
-    rownames_to_column()
-  # df.abund[-1] <- asin(sqrt(df.abund[-1]))
-  
-  m <- microbiome::meta(study) %>% 
-    select(study_condition) %>% 
-    rownames_to_column()
-  
-  model.input <- left_join(df.abund, m) %>% 
-    column_to_rownames() 
-  
-  if (!is.na(metafilter)){
-    model.input <- filter(model.input, study_condition != metafilter)
-  }
-  
-  count(model.input$study_condition)
-  unique(model.input$study_condition)
-  
-  model.input <- model.input %>% 
-    group_col_from_ids_ML(ids = model.input$study_condition) %>% 
-    dplyr::select(-study_condition)
-  
-  model.input$group <- factor(model.input$group)
-  
-  return(model.input)
-}
-
-#-----------------------------------------------------------------------------------------------------------
-
-# helper function for vizualizing Xgboost plots
-# https://www.kaggle.com/pelkoja/visual-xgboost-tuning-with-caret/report
-tuneplot <- function(x, probs = .90) {
-  ggplot(x) +
-    theme_bw()
-}
-
-#-----------------------------------------------------------------------------------------------------------
+#_______________________________________________________________________________
 
 
 # Plot feature of interest (foi)
@@ -580,7 +343,7 @@ plot_foi <- function(datObj, foi){
   
 }
 
-#-----------------------------------------------------------------------------------------------------------
+#_______________________________________________________________________________
 
 # Plot feature of interest (foi) for any Dataset from CMG
 plot_foi_general <- function(datObj, foi, title="" ){
@@ -662,30 +425,6 @@ fois <- function(datObj, foi) {
 
 #-------------------------------------------------------------------
 
-# SGV Stats Function
-
-nmean_summary <- function(df){
-  output.stats <- tibble()
-  vars = colnames(df)[1:ncol(df)-1]
-  for (sv in vars) {
-    print(sv)
-    stat.col <- df %>%
-      dplyr::select(group, sv) %>%
-      filter(!is.na(df[[sv]])) %>%
-      group_by(group) %>%
-      dplyr::summarise(n = n(),across(where(is.numeric),
-                              ~ mean(.x, na.rm = TRUE)))
-    colnames(stat.col)[3] <- "ratio_detected"
-
-    row2add <- cbind(stat.col[1:3], sv)
-    output.stats <- rbind(output.stats, row2add)
-  }
-  return(output.stats)
-}
-
-
-#-------------------------------------------------------------------
-
 # Functions to clean up column names 
 
 clean.cols.tax <- function(x) {
@@ -700,14 +439,16 @@ clean.cols.abund_RPK <- function(x) {
 clean.cols.abund_CPM <- function(x) {
   colnames(x) <- gsub("_Abundance-CPM", "", colnames(x)); x } 
 
+trim_cols <- function(x) {
+  colnames(x) <- substr(colnames(x), 1, 5); x }
 
-trim_cols <- function(x, cohort) {
-  if (cohort == "TBC"){
-    colnames(x) <- substr(colnames(x), 1, 10); x 
-  } else if (cohort == "RUSH") {
-    colnames(x) <- substr(colnames(x), 1, 6); x
-    }
-  } 
+trim_underscore <- function(x) {
+  colnames(x) <- str_remove(colnames(x), "_$"); x }
+
+clean.cols.qiime <- function(x) {
+  colnames(x) <- gsub("13244.", "", colnames(x)); x}
+clean.cols.qiime2 <- function(x) {
+  colnames(x) <- gsub("\\.", "\\_", colnames(x)); x} 
 
 
 make_rfriendly_rows <- function(df, passed_column) {
@@ -750,19 +491,350 @@ decode_rfriendly_rows <- function(df, passed_column) {
 }
 
 
-#----------------------------------------------------------------------------------------------------------
+#_______________________________________________________________________________--------
 
 maaslin_prep <- function(dat){
   dat <- dat %>% 
-    subset_samples(donor_id %ni% low_qc[[1]]) %>% 
     core(detection = 0, prevalence = 0.1)
   return(dat)
 }
 
-#-----------------------------------------------------------------------------------------------------------
-
+#_______________________________________________________________________________
 
 binarize <- function(x) {
   ifelse(x == 0, 0, 1)
 }
-#-----------------------------------------------------------------------------------------------------------
+
+#_______________________________________________________________________________
+
+my_clean_theme <- function() {
+  th <- ggplot2::theme_bw() +
+    theme(
+      panel.grid = element_blank(),
+      strip.background = element_rect(fill = "white"),
+      plot.title = element_text(hjust = 0.5),
+      plot.margin = unit(c(1, 1, 1, 2), "cm")
+    )
+  return(th)
+}
+
+#_______________________________________________________________________________
+
+rarefunc <- function(dat) {
+  rarefy_even_depth(dat,
+                    replace = F,
+                    rngseed = 42,
+                    verbose = T)
+}
+
+
+#_______________________________________________________________________________
+#####                      Correlation Functions                           ##### 
+#_______________________________________________________________________________
+# 
+# corr_abund_prep <- function(obj,  obj.name, cohort, sigfilter = T) {
+#   
+#   ### Read-in MaAsLin2 output
+#   Maas.pd.pc.sig <- read_tssv(
+#     paste0("data/MaAsLin2_Analysis/", cohort, "/", obj.name, 
+#            "_PDvPC_maaslin2_output/all_results.tsv"), col_names = T) %>% 
+#     filter(value == "Population Control") %>% 
+#     filter(qval < 0.25)
+#   
+#   Maas.pd.hc.sig <- read_tsv(
+#     paste0("data/MaAsLin2_Analysis/",  cohort, "/", obj.name, 
+#            "_PDvHC_maaslin2_output/all_results.tsv"), col_names = T) %>% 
+#     filter(value == "Household Control") %>% 
+#     filter(qval < 0.25)
+#   
+#   features <- full_join(Maas.pd.pc.sig, Maas.pd.hc.sig, by = "feature") %>% 
+#     dplyr::select("feature")
+#   
+#   if(sigfilter){
+#     abundance_tbl <- 
+#       obj %>% 
+#       subset_samples(donor_id %ni% low_qc[[1]]) %>% 
+#       core(detection = 0, prevalence = 0.1) %>% 
+#       abundances() %>% 
+#       as.data.frame() %>% 
+#       rownames_to_column() %>% 
+#       filter(rowname %in% features[[1]]) %>% 
+#       column_to_rownames() %>% 
+#       t() %>%
+#       as.data.frame()
+#   } else {
+#     abundance_tbl <- 
+#       obj %>% 
+#       subset_samples(donor_id %ni% low_qc[[1]]) %>% 
+#       core(detection = 0, prevalence = 0.1) %>% 
+#       abundances() %>% 
+#       as.data.frame() %>% 
+#       t() %>%
+#       as.data.frame()
+#   }
+#   return(abundance_tbl)
+# }
+
+
+corr_loop_parallel <- function(metadata, abundance, obj.name) {
+  
+  # # TROUBLE
+  # metadata = corr.meta
+  # abundance = corr.abund
+  # obj.name = obj.name
+  
+  require(foreach)
+  require(doParallel)
+  
+  #setup parallel back-end to use multiple threads
+  start_time <- Sys.time()
+  cores = detectCores()
+  cl <- makeCluster(cores[1] - 1) #not to overload your computer
+  registerDoParallel(cl)
+  
+  
+  corr_output <- tibble()
+  looped_df <-
+    foreach(metavar = colnames(metadata), .combine = 'rbind') %:%
+    foreach(feature = colnames(abundance), .combine = 'rbind') %dopar% {
+      # Calculate Spearman's Correlation
+      spearman <-
+        cor.test(
+          x = metadata[[metavar]],
+          y = abundance[[feature]],
+          method = "spearman",
+          na.action = na.exclude,
+          alternative = "two.sided"
+        )
+      
+      data.frame(
+        "metadata" = metavar,
+        "feature" = feature,
+        "object_name" = obj.name,
+        "rho" = spearman$estimate[[1]],
+        "S" = spearman$statistic[[1]],
+        "n" = length(na.omit(metadata[[metavar]])),
+        "p" = spearman$p.value[[1]]
+      )
+    }
+  stopCluster(cl)
+  # Remove NAs and add FDR (Benjamini Hochberg)
+  statvars <- c("rho", "S", "n", "p")
+  corr_output <-
+    looped_df %>%
+    na.omit() %>%
+    mutate(across(all_of(statvars), as.character),
+           across(all_of(statvars), as.numeric)) %>%
+    group_by(object_name, metadata) %>%
+    mutate(q = p.adjust(p, method = 'BH')) %>%
+    ungroup()
+  end_time <- Sys.time()
+  cat("Correlations calculated in : ", 
+      end_time - start_time, attr(end_time - start_time, "units"), "\n")
+  return(corr_output)
+}
+
+corr_loop <- function(metadata, abundance, obj.name) {
+  corr_output <- tibble()
+  for (metavar in colnames(metadata)) {
+    cat("Calculating correlations for: ", metavar[[1]], "\n")
+    for (feature in colnames(abundance)) {
+      # Calculate Spearman's Correlation
+      spearman <-
+        cor.test(
+          x = metadata[[metavar]],
+          y = abundance[[feature]],
+          method = "spearman",
+          na.action = na.exclude,
+          alternative = "two.sided"
+        )
+      row2add <-
+        cbind(
+          "metadata" = metavar,
+          "feature" = feature,
+          "object_name" = obj.name,
+          "rho" = spearman$estimate[[1]],
+          "S" = spearman$statistic[[1]],
+          "n" = length(na.omit(metadata[[metavar]])),
+          "p" = spearman$p.value[[1]]
+        )
+      corr_output <- rbind(corr_output, row2add)
+    }
+  }
+  # Remove NAs and add FDR (Benjamini Hochberg)
+  statvars <- c("rho", "S", "n", "p")
+  corr_output <-
+    corr_output %>%
+    na.omit() %>%
+    mutate(across(all_of(statvars), as.character),
+           across(all_of(statvars), as.numeric)) %>%
+    decode_rfriendly_rows(passed_column = "feature") %>%
+    dplyr::select(-feature) %>%
+    dplyr::rename("feature"="fullnames") %>%
+    dplyr::relocate(feature, .after = metadata) %>%
+    group_by(object_name, metadata) %>%
+    mutate(q = p.adjust(p, method = 'BH')) %>%
+    ungroup()
+  return(corr_output)
+}
+
+
+#_______________________________________________________________________________
+#####                        Correlation XY Plot                          ##### 
+#_______________________________________________________________________________
+
+
+corr_xy <- function(obj, corr_obj, feature_var, metadata_var){
+  
+  #' Function creates a scatter plot of a given feature and a metadata column
+  abund <- obj %>% 
+    abundances() %>% 
+    as.data.frame() %>%
+    rownames_to_column() %>% 
+    mutate(rowname = gsub("\\-", ".", rowname)) %>% 
+    mutate(rowname = gsub("\\:", ".", rowname)) %>% 
+    mutate(rowname = gsub("\\+", ".", rowname)) %>% 
+    column_to_rownames() %>% 
+    t() %>% as.data.frame() %>%
+    rownames_to_column(var = "donor_id")
+  df.plot <- obj %>% 
+    meta() %>% 
+    process_meta() %>% 
+    left_join(abund, by = "donor_id")
+  
+  stat_col <-
+    corr_obj %>%
+    dplyr::filter(feature == sym(feature_var)) %>%
+    dplyr::filter(metadata == sym(metadata_var))
+  stat_title <-
+    paste0(
+      "Spearman's Rho: ", round(stat_col$rho, digits = 3), "\n",
+      "P-value: ", format(stat_col$p, digits = 3, scientific =T),
+      "  FDR: ", format(stat_col$q, digits = 3, scientific =T)
+    )
+  cat("Rho: ", stat_col$rho, ", ")
+  cat("P-value: ", stat_col$p, ",  ")
+  cat("Q-value: ", stat_col$q, "\n")
+  
+  df.plot %>%
+    drop_na(metadata_var) %>%
+    ggplot(aes(x = .data[[feature_var]], y = .data[[metadata_var]])) +
+    geom_point(aes(fill = treatment_group, color = treatment_group), shape=21, alpha = 1) +
+    geom_smooth(method = lm, color="darkgrey", linetype="dotted", se = F) +
+    theme_bw() +
+    labs(x = feature_var, y = metadata_var, title = stat_title) +
+    scale_fill_manual(values = treatment.group.cols) +
+    scale_color_manual(values = treatment.group.cols.rims) +
+    theme(panel.grid = element_blank(),
+          plot.title = element_text(size = 12))
+}
+
+#_______________________________________________________________________________
+#####                      Correlation Heatmap                           ##### 
+#_______________________________________________________________________________
+
+corr_heatmap <- function(corr.df){
+  
+  # Calculate number of significant (P-VALUE < 0.05) associations
+  #  and select top 30 features
+  corr.df.top <- corr.df %>% 
+    dplyr::filter(q < 0.25) %>%
+    dplyr::group_by(feature) %>%
+    dplyr::summarise(n = n()) %>%
+    arrange(desc(n)) %>%
+    top_n(n = 30, wt = n) %>% 
+    slice_head(n = 30)
+  
+  # Filter correlation df for top 30 features
+  corr.df.trim <- corr.df %>% 
+    mutate(metadata = as.character(metadata)) %>% 
+    filter(feature %in% corr.df.top$feature)
+  
+  # create dataframe matrix of Rho correlation values for distance functions
+  rho.df <- 
+    corr.df.trim %>% 
+    dplyr::select(feature, metadata, rho) %>% 
+    pivot_wider(names_from = feature, values_from = rho, values_fill = NA) %>% 
+    column_to_rownames(var = "metadata")
+  
+  # Hierarchical clustering of Rho values for features & metadata
+  meta.dendro <- 
+    as.dendrogram(hclust(d = dist(x = rho.df), method = "complete"))
+  meta.dendro.plot <- ggdendrogram(data = meta.dendro, rotate = TRUE)
+  feature.dendro <- 
+    as.dendrogram(hclust(d = dist(x = as.data.frame(t(rho.df))), method = "complete"))
+  feature.dendro.plot <- ggdendrogram(data = feature.dendro, rotate = TRUE)
+  
+  ### Reorder Heatmap axis using order of dendrograms
+  feature.order <- order.dendrogram(feature.dendro)
+  metadata.order <- order.dendrogram(meta.dendro)
+  corr.df.trim.ordered <- corr.df.trim %>% 
+    dplyr::mutate(feature = factor(feature, 
+                                   ordered = TRUE,
+                                   levels = unique(corr.df.trim$feature)[feature.order] )) %>% 
+    dplyr::mutate(metadata = factor(metadata, 
+                                    ordered = TRUE,
+                                    levels = unique(corr.df.trim$metadata)[metadata.order] )) 
+  
+  ### Plot Heatmap
+  h1 <- 
+    corr.df.trim.ordered %>% 
+    mutate(siglabel = if_else(q < 0.20, "*", "")) %>%
+    ggplot(aes(x = metadata, y = feature, fill = rho)) +
+    geom_tile() + 
+    geom_text(aes(label=siglabel), size=5,vjust = 0.77, color = "white") +
+    labs(fill = "Spearman correlation") +
+    scale_y_discrete(position = "right") +
+    scale_fill_distiller(palette = "RdBu") +
+    theme(axis.text.x = element_text(angle=45, hjust =1),
+          legend.position = "top",
+          axis.title.x = element_blank(),
+          axis.title.y = element_blank(),
+          axis.ticks = element_blank(),
+          panel.background = element_blank(),
+          plot.margin = unit(c(1, 1, 1, 5), "cm"))
+  
+  print(h1)
+  return(h1)
+}
+#_______________________________________________________________________________
+#####                Correlation Plot helper functions                       ##### 
+#_______________________________________________________________________________
+
+trim_sig_helper <- function(df_cors, n=10){
+  output <- 
+    df_cors %>%
+    filter(q < 0.25) %>%
+    slice_min(n = n, order_by = q)
+  return(output)
+}
+
+top_n_scatterplots <- function(dat, obj.name, 
+                               df.cors, metaclass,
+                               n_plots = 10){
+  
+  df.cors.sig <- trim_sig_helper(df.cors, n=n_plots)
+  
+  for (corr in 1:nrow(df.cors.sig)) {
+    cor_row <- df.cors.sig[corr, ]
+    p <- corr_xy(obj = dat, df.cors,
+                 feature_var = cor_row$feature[[1]],
+                 metadata_var = as.character(cor_row$metadata[[1]]) )
+    
+    # print(p)
+    obj.name.out <- gsub('/', '_', obj.name)
+    obj.name.out <- gsub(',', '', obj.name.out)
+    outputdir <- paste0("data/Correlations/", obj.name.out)
+    dir.create(outputdir)
+    plot.name = paste0(outputdir, "/", cor_row$feature[[1]], "_VS_",
+                       as.character(cor_row$metadata[[1]]), ".svg")
+    ggsave(p, filename = plot.name, height = 4, width = 5)
+  }
+}
+#_______________________________________________________________________________
+
+
+
+
+
+

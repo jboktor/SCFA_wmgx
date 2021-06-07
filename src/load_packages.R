@@ -1,6 +1,6 @@
 # Load Packages
 
-## Load Packages into enviornment
+## Load Packages into environment
 library(ggplot2)
 library(tidyverse)
 library(readxl)
@@ -20,15 +20,13 @@ library(RColorBrewer)
 library(ggfortify)
 library(vegan)
 library(MASS)
-library(compositions)
-library(zCompositions)
 library(phyloseq)
 
 library(Biobase)
-library(viridis)
+library(viridis) 
 library(ggbeeswarm)
 
-library(FSA)
+# library(FSA)
 library(ggpubr)
 library(ggsci)
 library(microbiome)
@@ -44,7 +42,6 @@ library(sjPlot)
 library(nlme)
 library(lme4)
 library(jtools)
-library(eulerr)
 library(ggthemes)
 
 library(ggforce)
@@ -55,10 +52,7 @@ library(MMUPHin)
 library(fantaxtic)
 library(igraph)
 library(slam)
-library(curatedMetagenomicData)
-
 library(scales)
-library(DirichletMultinomial)
 library(magrittr)
 library(randomForest)
 library(pROC)
@@ -75,12 +69,10 @@ library(mlbench)
 library(caret)
 library(MLeval)
 library(tidymodels)
-library(vip)
-library(Rcpp)
-library(mRMRe)
-
-library(rsconnect)
 library(phylosmith)
-
 library(lazyeval)
+library(qiime2R)
+library(renv)
+
+library(janitor)
 
